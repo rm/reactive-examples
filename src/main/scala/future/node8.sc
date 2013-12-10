@@ -2,12 +2,11 @@ import math.random
 import scala.language.postfixOps
 import scala.util._
 import control.NonFatal
-import scala.util.{Try, Success, Failure}
+import scala.util.{ Try, Success, Failure }
 import scala.concurrent._
 import duration._
 import ExecutionContext.Implicits.global
 import scala.concurrent.{ ExecutionContext, CanAwait, OnCompleteRunnable, TimeoutException, ExecutionException, blocking }
-
 
 /* This worksheet demonstrates some of the code snippets from
 * Week3, Lecture 3, "Combinators on Futures", especially Slide 8.
@@ -25,51 +24,50 @@ import scala.concurrent.{ ExecutionContext, CanAwait, OnCompleteRunnable, Timeou
 object node8 {
   println("Welcome to the Scala worksheet")       //> Welcome to the Scala worksheet
 
-  val EMail1 = (for {i <- 0 to 1} yield (random*256).toByte).toArray
-                                                  //> EMail1  : Array[Byte] = Array(-59, -121)
-  val EMail2 = (for {i <- 0 to 10} yield (random*256).toByte).toArray
-                                                  //> EMail2  : Array[Byte] = Array(12, 10, -114, 40, -80, 28, -30, 5, 124, 27, -
-                                                  //| 123)
+  val EMail1 = (for { i <- 0 to 1 } yield (random * 256).toByte).toArray
+                                                  //> EMail1  : Array[Byte] = Array(-71, 122)
+  val EMail2 = (for { i <- 0 to 10 } yield (random * 256).toByte).toArray
+                                                  //> EMail2  : Array[Byte] = Array(62, 37, 83, -60, -3, -124, 55, -100, -89, -12
+                                                  //| 2, -115)
   type URL = String
-  
+
   trait Socket {
     def readFromMemory(): Future[Array[Byte]]
     def sendTo(url: URL, packet: Array[Byte]): Future[Array[Byte]]
     def sendToSafe(packet: Array[Byte]): Future[Array[Byte]]
   }
- 
-  def disconnect(a:Socket) = (random < 0.2)       //> disconnect: (a: node8.Socket)Boolean
-  class InputException(msg: String) extends Error{
+
+  def disconnect(a: Socket) = (random < 0.2)      //> disconnect: (a: node8.Socket)Boolean
+  class InputException(msg: String) extends Error {
     override def toString = msg
   }
-  class TransmissionException(msg: String) extends Error{
+  class TransmissionException(msg: String) extends Error {
     override def toString = msg
   }
   object mailServer {
-  	val europe = "http://example.de"
-  	val usa = "http://example.com"
+    val europe = "http://example.de"
+    val usa = "http://example.com"
   }
   val maxTotalEurope = 50                         //> maxTotalEurope  : Int = 50
   val multiplierUSA = 2                           //> multiplierUSA  : Int = 2
-  
+
   //Message length 8
   val Received = "Received".map(x => x.toByte).toArray
                                                   //> Received  : Array[Byte] = Array(82, 101, 99, 101, 105, 118, 101, 100)
-   
-  def packetSource(rand: Double, prob: Double ): Array[Byte] =
+
+  def packetSource(rand: Double, prob: Double): Array[Byte] =
     if (rand < prob) {
-        /*Blocking designates a piece of code that potentially blocks,
+      /*Blocking designates a piece of code that potentially blocks,
       * allowing the thread scheduler to add additional threads and
       * resolve potential deadlocks.
       */
-      blocking {Thread.sleep(10)}
+      blocking { Thread.sleep(10) }
       EMail2
-    }
-    else {
-      blocking {Thread.sleep(1)}
+    } else {
+      blocking { Thread.sleep(1) }
       EMail1
     }                                             //> packetSource: (rand: Double, prob: Double)Array[Byte]
-  
+
   object SocketFactory {
     /* The anonymous class syntax is used for this factory object,
     * allowing us to instantiate an object
@@ -81,49 +79,50 @@ object node8 {
     * SocketFactory.apply()
     */
     def apply() = new Socket {
-       def readFromMemory(): Future[Array[Byte]] = Future {
-         if (disconnect(this))
-           throw(new InputException("Oooops"))
-           /* This usage of higher-order functions
+      def readFromMemory(): Future[Array[Byte]] = Future {
+        if (disconnect(this))
+          throw (new InputException("Oooops"))
+        /* This usage of higher-order functions
            * employs the "flattening" effect of flatMap
            * to concatenate the Array[Byte]s of the individual
            * emails into one Array[Byte] that is the packet.
            */
-         else (1 to 10 toArray) flatMap(i => packetSource(random, 0.5))
-       }
-       /* The delivery may succeed to both,
+        else (1 to 10 toArray) flatMap (i => packetSource(random, 0.5))
+      }
+      /* The delivery may succeed to both,
        * or one or the other will fail, or both.
        */
-       def sendTo(url: URL, packet: Array[Byte]): Future[Array[Byte]] = Future
-       { url match {
-           case "http://example.de" =>
-			         if (packet.length > maxTotalEurope)
-			           throw(new TransmissionException("Guter Versuch!"))
-			         else
-			           Received
-           case "http://example.com" =>
-			         if (packet.length % multiplierUSA == 0)
-			           throw(new TransmissionException("Nice try!"))
-			         else
-			           Received
-			       }
-       }
-       def sendToSafe(packet: Array[Byte]): Future[Array[Byte]] = {
-         sendTo(mailServer.europe, packet) recoverWith {
-           case europeError => sendTo(mailServer.usa, packet) recover {
-             case usaError  =>
-               usaError.getCause().toString.map(x => x.toByte).toArray
-           // The code below, as originally given in the lecture, does not
-           // demonstrate how a sendTo europe failure is hidden.
-           //  case  usaError =>
-           //    usaError.getMessage.map(x => x.toByte).toArray
-       } } }
-       
-			
+      def sendTo(url: URL, packet: Array[Byte]): Future[Array[Byte]] = Future {
+        url match {
+          case "http://example.de" =>
+            if (packet.length > maxTotalEurope)
+              throw (new TransmissionException("Guter Versuch!"))
+            else
+              Received
+          case "http://example.com" =>
+            if (packet.length % multiplierUSA == 0)
+              throw (new TransmissionException("Nice try!"))
+            else
+              Received
+        }
+      }
+      def sendToSafe(packet: Array[Byte]): Future[Array[Byte]] = {
+        sendTo(mailServer.europe, packet) recoverWith {
+          case europeError => sendTo(mailServer.usa, packet) recover {
+            case usaError =>
+              usaError.getCause().toString.map(x => x.toByte).toArray
+            // The code below, as originally given in the lecture, does not
+            // demonstrate how a sendTo europe failure is hidden.
+            //  case  usaError =>
+            //    usaError.getMessage.map(x => x.toByte).toArray
+          }
+        }
+      }
+
     }
   }
 
-  def block(i:Int) = {
+  def block(i: Int) = {
     println("Iteration: " + i.toString)
     val socket = SocketFactory()
     val packet = socket.readFromMemory()
@@ -144,11 +143,11 @@ object node8 {
     }
     val confirmation =
       packet.flatMap(p => {
-        socket.sendToSafe( p )
-        })
+        socket.sendToSafe(p)
+      })
     // Similarly, you may throttle here.
     //Await.ready(confirmation, 1 second)
-     /* This command demonstrates that the
+    /* This command demonstrates that the
       * confirmation Future is available throughout the scope of block()
       * unlike the previous implementation.
       */
@@ -162,9 +161,9 @@ object node8 {
         println("Error message: " + t.getCause().toString + " " + i.toString)
       }
     }
-    
+
   }                                               //> block: (i: Int)Unit
-   /* Multiple executions of a block of commands where
+  /* Multiple executions of a block of commands where
    * each block contains one readFromMemory and, if that is
    * successful, two sendTos, one ot Europe and one to the USA.
    * Note that these blocks execute ansynchronously -
@@ -175,7 +174,7 @@ object node8 {
    * and it keeps the worksheet functioning long enough to see
    * some of the output of the ansynchronous computations.
    */
-  (1 to 15 toList).foreach(i =>block(i))          //> Iteration: 1
+  (1 to 15 toList).foreach(i => block(i))         //> Iteration: 1
                                                   //| Confirmation Ready: false 1
                                                   //| Iteration: 2
                                                   //| Confirmation Ready: false 2
@@ -193,9 +192,7 @@ object node8 {
                                                   //| Confirmation Ready: false 8
                                                   //| Iteration: 9
                                                   //| Confirmation Ready: false 9
-                                                  //| Error message: Oooops 5
                                                   //| Iteration: 10
-                                                  //| Error message: Oooops 5
                                                   //| Confirmation Ready: false 10
                                                   //| Iteration: 11
                                                   //| Confirmation Ready: false 11
@@ -207,34 +204,36 @@ object node8 {
                                                   //| Confirmation Ready: false 14
                                                   //| Iteration: 15
                                                   //| Confirmation Ready: false 15
-   //keeps the worksheet alive so the iterations can finish!
-  blocking{Thread.sleep(3000)}                    //> Error message: Oooops 15
+  //keeps the worksheet alive so the iterations can finish!
+  blocking { Thread.sleep(3000) }                 //> Error message: Oooops 6
+                                                  //| Error message: Oooops 6
+                                                  //| Error message: Oooops 9
+                                                  //| Error message: Oooops 9
+                                                  //| Error message: Oooops 10
+                                                  //| Error message: Oooops 10
+                                                  //| Error message: Oooops 11
+                                                  //| Error message: Oooops 11
                                                   //| Error message: Oooops 15
-                                                  //| Packet Length: 47 4
-                                                  //| Message: Received 4
-                                                  //| Packet Length: 56 9
-                                                  //| Packet Length: 56 8
-                                                  //| Packet Length: 56 2
-                                                  //| Packet Length: 56 13
-                                                  //| Message: Nice try! 2
-                                                  //| Message: Nice try! 13
-                                                  //| Message: Nice try! 9
-                                                  //| Message: Nice try! 8
-                                                  //| Packet Length: 65 11
-                                                  //| Message: Received 11
-                                                  //| Packet Length: 65 7
-                                                  //| Message: Received 7
+                                                  //| Error message: Oooops 15
+                                                  //| Packet Length: 56 5
+                                                  //| Packet Length: 65 3
                                                   //| Packet Length: 65 14
-                                                  //| Message: Received 14
-                                                  //| Packet Length: 74 3
-                                                  //| Packet Length: 74 6
-                                                  //| Message: Nice try! 3
-                                                  //| Message: Nice try! 6
+                                                  //| Message: Nice try! 5
                                                   //| Packet Length: 74 1
                                                   //| Message: Nice try! 1
-                                                  //| Packet Length: 74 10
-                                                  //| Message: Nice try! 10
-                                                  //| Packet Length: 92 12
-                                                  //| Message: Nice try! 12/
-  
+                                                  //| Packet Length: 65 2
+                                                  //| Message: Received 2
+                                                  //| Message: Received 14
+                                                  //| Message: Received 3
+                                                  //| Packet Length: 74 4
+                                                  //| Message: Nice try! 4
+                                                  //| Packet Length: 65 7
+                                                  //| Message: Received 7
+                                                  //| Packet Length: 74 13
+                                                  //| Message: Nice try! 13
+                                                  //| Packet Length: 65 8
+                                                  //| Message: Received 8
+                                                  //| Packet Length: 74 12
+                                                  //| Message: Nice try! 12-
+
 }

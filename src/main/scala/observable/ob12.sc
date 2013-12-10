@@ -12,29 +12,28 @@ import duration._
 
 object ob12 {
   println("Welcome to the Scala worksheet")       //> Welcome to the Scala worksheet
-    
- def printOut[T](i:Int)(obs:Observable[T])(num:Int)(msg:String): Unit = {
-   blocking{Thread.sleep(20)}
-   val is = i.toString
-   val obsP =
-     if (num > 0 ) obs.take(num)
-     else obs
-   obsP.subscribe(
-     it => {
-      val itOut = it.toString
-      println(f"i = $is, obs: $msg, next = $itOut")
+
+  def printOut[T](i: Int)(obs: Observable[T])(num: Int)(msg: String): Unit = {
+    blocking { Thread.sleep(20) }
+    val is = i.toString
+    val obsP =
+      if (num > 0) obs.take(num)
+      else obs
+    obsP.subscribe(
+      it => {
+        val itOut = it.toString
+        println(f"i = $is, obs: $msg, next = $itOut")
       },
-        error => println(f"$is Ooops"),
-        () =>    println(f"$is Completed")
-   )
+      error => println(f"$is Ooops"),
+      () => println(f"$is Completed"))
   }                                               //> printOut: [T](i: Int)(obs: rx.lang.scala.Observable[T])(num: Int)(msg: Strin
                                                   //| g)Unit
-     
+
   def block(i: Int)(num: Int) = {
     println("Observable: " + i.toString)
-    
-    val ticks: Observable[Long] = Observable.interval((i*1000 + 500) millis)
-    val evens: Observable[Long] = ticks.filter(s => (s%2 == 0))
+
+    val ticks: Observable[Long] = Observable.interval((i * 1000 + 500) millis)
+    val evens: Observable[Long] = ticks.filter(s => (s % 2 == 0))
     val bufs: Observable[Seq[Long]] = ticks.buffer(2, 1)
     val fails: Observable[Long] = ticks.take(3) ++ Observable(new Exception("oops")) ++ ticks
     // Unlike the iterable case, we are able to "traverse" the observable
@@ -43,18 +42,18 @@ object ob12 {
     printOut(i)(evens)(num)("evens")
     printOut(i)(bufs)(num)("bufs")
     printOut(i)(fails)(num)("fails") // notice that this printOut stops after the failure
-       
-	}                                         //> block: (i: Int)(num: Int)Unit
+
+  }                                               //> block: (i: Int)(num: Int)Unit
   val gap = 5000                                  //> gap  : Int = 5000
 
   // multiple executions of the block execute asynchronously.
-	(0 to 1 toList).foreach(i =>block(i)(-1)) //> Observable: 0
+  (0 to 1 toList).foreach(i => block(i)(-1))      //> Observable: 0
                                                   //| Observable: 1
 
   // We are printing out observables of infinite length, so
   // the only reason the worksheet terminates is that we block here
   // for a finite duration (5 seconds).
-  blocking{Thread.sleep(gap)} // needed for asynchronous worksheets
+  blocking { Thread.sleep(gap) } // needed for asynchronous worksheets
                                                   //> i = 0, obs: ticks, next = 0
                                                   //| i = 0, obs: evens, next = 0
                                                   //| i = 0, obs: fails, next = 0
@@ -86,5 +85,5 @@ object ob12 {
                                                   //| i = 0, obs: bufs, nex
                                                   //| Output exceeds cutoff limit.
   println("Done")                                 //> Done
-   
+
 }

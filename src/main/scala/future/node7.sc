@@ -2,7 +2,7 @@ import math.random
 import scala.language.postfixOps
 import scala.util._
 import control.NonFatal
-import scala.util.{Try, Success, Failure}
+import scala.util.{ Try, Success, Failure }
 import scala.concurrent._
 import duration._
 import ExecutionContext.Implicits.global
@@ -19,50 +19,49 @@ import ExecutionContext.Implicits.global
 object node7 {
   println("Welcome to the Scala worksheet")       //> Welcome to the Scala worksheet
 
-  val EMail1 = (for {i <- 0 to 1} yield (random*256).toByte).toArray
-                                                  //> EMail1  : Array[Byte] = Array(-126, -107)
-  val EMail2 = (for {i <- 0 to 10} yield (random*256).toByte).toArray
-                                                  //> EMail2  : Array[Byte] = Array(115, -63, -55, -43, 109, 126, -15, -21, -26, 2
-                                                  //| 9, -11)
+  val EMail1 = (for { i <- 0 to 1 } yield (random * 256).toByte).toArray
+                                                  //> EMail1  : Array[Byte] = Array(-74, -68)
+  val EMail2 = (for { i <- 0 to 10 } yield (random * 256).toByte).toArray
+                                                  //> EMail2  : Array[Byte] = Array(38, -40, 116, -73, -26, -10, 109, -77, 26, -82
+                                                  //| , -24)
   type URL = String
-  
+
   trait Socket {
     def readFromMemory(): Future[Array[Byte]]
     def sendTo(url: URL, packet: Array[Byte]): Future[Array[Byte]]
     def sendToAndBackup(packet: Array[Byte]): Future[(Array[Byte], Array[Byte])]
   }
- 
-  def disconnect(a:Socket) = (random < 0.1)       //> disconnect: (a: node7.Socket)Boolean
-  class InputException(msg: String) extends Error{
+
+  def disconnect(a: Socket) = (random < 0.1)      //> disconnect: (a: node7.Socket)Boolean
+  class InputException(msg: String) extends Error {
     override def toString = msg
   }
-  class TransmissionException(msg: String) extends Error{
+  class TransmissionException(msg: String) extends Error {
     override def toString = msg
   }
   object mailServer {
-  	val europe = "http://example.de"
-  	val usa = "http://example.com"
+    val europe = "http://example.de"
+    val usa = "http://example.com"
   }
   val maxTotalEurope = 70                         //> maxTotalEurope  : Int = 70
   val multiplierUSA = 4                           //> multiplierUSA  : Int = 4
-  
+
   val Received = "received".map(x => x.toByte).toArray
                                                   //> Received  : Array[Byte] = Array(114, 101, 99, 101, 105, 118, 101, 100)
-   
-  def packetSource(rand: Double, prob: Double ): Array[Byte] =
+
+  def packetSource(rand: Double, prob: Double): Array[Byte] =
     if (rand < prob) {
-        /*Blocking designates a piece of code that potentially blocks,
+      /*Blocking designates a piece of code that potentially blocks,
       * allowing the thread scheduler to add additional threads and
       * resolve potential deadlocks.
       */
-      blocking {Thread.sleep(10)}
+      blocking { Thread.sleep(10) }
       EMail2
-    }
-    else {
-      blocking {Thread.sleep(1)}
+    } else {
+      blocking { Thread.sleep(1) }
       EMail1
     }                                             //> packetSource: (rand: Double, prob: Double)Array[Byte]
-  
+
   object SocketFactory {
     /* The anonymous class syntax is used for this factory object,
     * allowing us to instantiate an object
@@ -74,44 +73,43 @@ object node7 {
     * SocketFactory.apply()
     */
     def apply() = new Socket {
-       def readFromMemory(): Future[Array[Byte]] = Future {
-         if (disconnect(this))
-           throw(new InputException("Oooops"))
-           /* This usage of higher-order functions
+      def readFromMemory(): Future[Array[Byte]] = Future {
+        if (disconnect(this))
+          throw (new InputException("Oooops"))
+        /* This usage of higher-order functions
            * employs the "flattening" effect of flatMap
            * to concatenate the Array[Byte]s of the individual
            * emails into one Array[Byte] that is the packet.
            */
-         else (1 to 10 toArray) flatMap(i => packetSource(random, 0.5))
-       }
-       /* The delivery may succeed to both,
+        else (1 to 10 toArray) flatMap (i => packetSource(random, 0.5))
+      }
+      /* The delivery may succeed to both,
        * or one or the other will fail, or both.
        */
-       def sendTo(url: URL, packet: Array[Byte]): Future[Array[Byte]] = Future
-       { url match {
-           case "http://example.de" =>
-			         if (packet.length > maxTotalEurope)
-			           throw(new TransmissionException("Guter Versuch!"))
-			         else
-			           Received
-           case "http://example.com" =>
-			         if (packet.length % multiplierUSA == 0)
-			           throw(new TransmissionException("Nice try!"))
-			         else
-			           Received
-			       }
-       }
-       def sendToAndBackup(packet: Array[Byte]): Future[(Array[Byte], Array[Byte])] = {
-         val europeConfirm = sendTo(mailServer.europe, packet)
-         val usaConfirm = sendTo(mailServer.usa, packet)
-         europeConfirm.zip(usaConfirm)
-       }
-       
-			
+      def sendTo(url: URL, packet: Array[Byte]): Future[Array[Byte]] = Future {
+        url match {
+          case "http://example.de" =>
+            if (packet.length > maxTotalEurope)
+              throw (new TransmissionException("Guter Versuch!"))
+            else
+              Received
+          case "http://example.com" =>
+            if (packet.length % multiplierUSA == 0)
+              throw (new TransmissionException("Nice try!"))
+            else
+              Received
+        }
+      }
+      def sendToAndBackup(packet: Array[Byte]): Future[(Array[Byte], Array[Byte])] = {
+        val europeConfirm = sendTo(mailServer.europe, packet)
+        val usaConfirm = sendTo(mailServer.usa, packet)
+        europeConfirm.zip(usaConfirm)
+      }
+
     }
   }
 
-  def block(i:Int) = {
+  def block(i: Int) = {
     println("Iteration: " + i.toString)
     val socket = SocketFactory()
     val packet = socket.readFromMemory()
@@ -132,10 +130,10 @@ object node7 {
     }
     val confirmation =
       packet.flatMap(p => {
-        socket.sendToAndBackup( p )
-        })
+        socket.sendToAndBackup(p)
+      })
     Await.ready(confirmation, 1 second)
-     /* This command demonstrates that the
+    /* This command demonstrates that the
       * confirmation Future is available throughout the scope of block()
       * unlike the previous implementation.
       */
@@ -148,9 +146,9 @@ object node7 {
         println("Error message: " + t.getCause().toString + " " + i.toString)
       }
     }
-    
+
   }                                               //> block: (i: Int)Unit
-   /* Multiple executions of a block of commands where
+  /* Multiple executions of a block of commands where
    * each block contains one readFromMemory and, if that is
    * successful, two sendTos, one ot Europe and one to the USA.
    * Note that these blocks execute ansynchronously -
@@ -161,46 +159,47 @@ object node7 {
    * and it keeps the worksheet functioning long enough to see
    * some of the output of the ansynchronous computations.
    */
-  (1 to 10 toList).foreach(i =>block(i))          //> Iteration: 1
+  (1 to 10 toList).foreach(i => block(i))         //> Iteration: 1
                                                   //| Packet Length: 56 1
                                                   //| Confirmation Ready: true 1
                                                   //| Iteration: 2
                                                   //| Error message: Nice try! 1
-                                                  //| Packet Length: 56 2
+                                                  //| Packet Length: 65 2
                                                   //| Confirmation Ready: true 2
                                                   //| Iteration: 3
-                                                  //| Error message: Nice try! 2
+                                                  //| Received 2
+                                                  //| Packet Length: 83 3
                                                   //| Confirmation Ready: true 3
-                                                  //| Error message: Oooops 3
-                                                  //| Error message: Oooops 3
                                                   //| Iteration: 4
-                                                  //| Packet Length: 65 4
+                                                  //| Error message: Guter Versuch! 3
+                                                  //| Packet Length: 56 4
                                                   //| Confirmation Ready: true 4
                                                   //| Iteration: 5
-                                                  //| Received 4
-                                                  //| Packet Length: 65 5
+                                                  //| Error message: Nice try! 4
+                                                  //| Packet Length: 83 5
                                                   //| Confirmation Ready: true 5
                                                   //| Iteration: 6
-                                                  //| Received 5
-                                                  //| Error message: Oooops 6
+                                                  //| Error message: Guter Versuch! 5
+                                                  //| Packet Length: 56 6
                                                   //| Confirmation Ready: true 6
                                                   //| Iteration: 7
-                                                  //| Error message: Oooops 6
+                                                  //| Error message: Nice try! 6
                                                   //| Packet Length: 65 7
                                                   //| Confirmation Ready: true 7
                                                   //| Iteration: 8
                                                   //| Received 7
-                                                  //| Packet Length: 83 8
+                                                  //| Packet Length: 65 8
                                                   //| Confirmation Ready: true 8
+                                                  //| Received 8
                                                   //| Iteration: 9
-                                                  //| Error message: Guter Versuch! 8
-                                                  //| Packet Length: 38 9
+                                                  //| Packet Length: 74 9
                                                   //| Confirmation Ready: true 9
                                                   //| Iteration: 10
-                                                  //| Received 9
+                                                  //| Error message: Guter Versuch! 9
                                                   //| Packet Length: 65 10
-                                                  //| Confirmation Ready: true 10
-   //keeps the worksheet alive so the iterations can finish!
-  blocking{Thread.sleep(3000)}                    //> Received 10-
-  
+                                                  //| Confirmation Ready: 
+                                                  //| Output exceeds cutoff limit.
+  //keeps the worksheet alive so the iterations can finish!
+  blocking { Thread.sleep(3000) }                 //> Received 10/
+
 }

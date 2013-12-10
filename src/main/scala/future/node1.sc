@@ -8,46 +8,46 @@ import math.random
 object node1 {
   println("Welcome to the Scala worksheet")       //> Welcome to the Scala worksheet
   abstract class Coin {
-     val denomination: Int
+    val denomination: Int
   }
-    case class Silver() extends Coin {
-      val denomination = 1
-    }
-    case class Gold() extends Coin {
-      val denomination = 10
-    }
-    
-  abstract class Treasure{
+  case class Silver() extends Coin {
+    val denomination = 1
+  }
+  case class Gold() extends Coin {
+    val denomination = 10
+  }
+
+  abstract class Treasure {
     val value: Int
-    }
-  
+  }
+
   trait Adventure {
     def collectCoins(): List[Coin]
     def buyTreasure(coins: List[Coin]): Treasure
   }
- 
-  def eatenByMonster(a:Adventure) = (random < 0.3)//> eatenByMonster: (a: node1.Adventure)Boolean
-  
-  class GameOverException(msg: String) extends Error{
+
+  def eatenByMonster(a: Adventure) = (random < 0.3)
+                                                  //> eatenByMonster: (a: node1.Adventure)Boolean
+
+  class GameOverException(msg: String) extends Error {
     override def toString = msg
   }
   val treasureCost = 50                           //> treasureCost  : Int = 50
-  
+
   object Diamond extends Treasure {
     val value = treasureCost
     override def toString = "Diamond"
   }
-   
-  def coinSource(rand: Double, prob: Double ): Coin =
+
+  def coinSource(rand: Double, prob: Double): Coin =
     if (rand < prob) {
       Thread.sleep(100)
       new Gold
-    }
-    else {
+    } else {
       Thread.sleep(10)
       new Silver
     }                                             //> coinSource: (rand: Double, prob: Double)node1.Coin
-  
+
   object AdventureFactory {
     /* The anonymous class syntax is used for this factory object,
     * allowing us to instantiate an object
@@ -59,30 +59,30 @@ object node1 {
     * AdventureFactory.apply()
     */
     def apply() = new Adventure {
-       def collectCoins(): List[Coin] = {
-         if (eatenByMonster(this))
-           throw(new GameOverException("Oooops"))
-         else for { i <- 1 to 10 toList } yield coinSource(random, 0.5)
-       }
-       def totalCoins(coins: List[Coin]) =
-         coins.foldLeft(0)( (sum, coin) => sum + coin.denomination  )
-       
-       def buyTreasure(coins: List[Coin]): Treasure =
-       {
-         if (totalCoins(coins) < treasureCost)
-           throw(new GameOverException("Nice try!"))
-         else
-           Diamond
-       }
+      def collectCoins(): List[Coin] = {
+        if (eatenByMonster(this))
+          throw (new GameOverException("Oooops"))
+        else for { i <- 1 to 10 toList } yield coinSource(random, 0.5)
+      }
+      def totalCoins(coins: List[Coin]) =
+        coins.foldLeft(0)((sum, coin) => sum + coin.denomination)
+
+      def buyTreasure(coins: List[Coin]): Treasure =
+        {
+          if (totalCoins(coins) < treasureCost)
+            throw (new GameOverException("Nice try!"))
+          else
+            Diamond
+        }
     }
   }
-  
+
   def block(i: Int) = {
     println("Iteration: " + i.toString)
-	  val adventure = AdventureFactory()
-	  val coins = adventure.collectCoins()
-	  val treasure = adventure.buyTreasure(coins)
-	  println("Treasure: " + treasure.toString + " " + i.toString)
+    val adventure = AdventureFactory()
+    val coins = adventure.collectCoins()
+    val treasure = adventure.buyTreasure(coins)
+    println("Treasure: " + treasure.toString + " " + i.toString)
   }                                               //> block: (i: Int)Unit
   /* Multiple executions of a block of commands where
    * each block contains one collectCoins and
@@ -90,7 +90,7 @@ object node1 {
    * because we are not catching exceptions in this implementation.
    * Note that these blocks execute synchrounsly.
    */
-  (1 to 10 toList).foreach(i =>block(i))          //> Iteration: 1
+  (1 to 10 toList).foreach(i => block(i))         //> Iteration: 1
                                                   //| Treasure: Diamond 1
                                                   //| Iteration: 2
                                                   //| Treasure: Diamond 2
@@ -99,24 +99,21 @@ object node1 {
                                                   //| Iteration: 4
                                                   //| Treasure: Diamond 4
                                                   //| Iteration: 5
-                                                  //| Treasure: Diamond 5
-                                                  //| Iteration: 6
-                                                  //| Oooops
-                                                  //| 	at node1$$anonfun$main$1$AdventureFactory$2$$anon$1.collectCoins(node1.s
-                                                  //| cala:64)
+                                                  //| Nice try!
+                                                  //| 	at node1$$anonfun$main$1$AdventureFactory$2$$anon$1.buyTreasure(node1.sc
+                                                  //| ala:72)
                                                   //| 	at node1$$anonfun$main$1.node1$$anonfun$$block$1(node1.scala:83)
                                                   //| 	at node1$$anonfun$main$1$$anonfun$apply$mcV$sp$1.apply$mcVI$sp(node1.sca
-                                                  //| la:93)
-                                                  //| 	at node1$$anonfun$main$1$$anonfun$apply$mcV$sp$1.apply(node1.scala:93)
-                                                  //| 	at node1$$anonfun$main$1$$anonfun$apply$mcV$sp$1.apply(node1.scala:93)
+                                                  //| la:92)
+                                                  //| 	at node1$$anonfun$main$1$$anonfun$apply$mcV$sp$1.apply(node1.scala:92)
+                                                  //| 	at node1$$anonfun$main$1$$anonfun$apply$mcV$sp$1.apply(node1.scala:92)
                                                   //| 	at scala.collection.immutable.List.foreach(List.scala:318)
-                                                  //| 	at node1$$anonfun$main$1.apply$mcV$sp(node1.scala:93)
+                                                  //| 	at node1$$anonfun$main$1.apply$mcV$sp(node1.scala:92)
                                                   //| 	at org.scalaide.worksheet.runtime.library.WorksheetSupport$$anonfun$$exe
                                                   //| cute$1.apply$mcV$sp(WorksheetSupport.scala:76)
                                                   //| 	at org.scalaide.worksheet.runtime.library.WorksheetSupport$.redirected(W
-                                                  //| orkshe
+                                                  //| orksheetSupport.scala:65)
+                                                  //| 	at org.scalaide
                                                   //| Output exceeds cutoff limit.
-  
-  
-   
+
 }

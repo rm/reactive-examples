@@ -1,7 +1,7 @@
 import math.random
 import scala.language.postfixOps
 import scala.util._
-import scala.util.{Try, Success, Failure}
+import scala.util.{ Try, Success, Failure }
 import scala.concurrent._
 import duration._
 import ExecutionContext.Implicits.global
@@ -11,13 +11,12 @@ import scala.async.Async._
 * Week3, Lecture 4, "Composing Futures".
 */
 
-
 object node14 {
   println("Welcome to the Scala worksheet")       //> Welcome to the Scala worksheet
-  
-  def filter[T](future: Future[T], predicate: T => Boolean)(implicit executor: ExecutionContext): Future[T] = async{
-    val x: T = await{ future }
-    if(!predicate(x)) {
+
+  def filter[T](future: Future[T], predicate: T => Boolean)(implicit executor: ExecutionContext): Future[T] = async {
+    val x: T = await { future }
+    if (!predicate(x)) {
       throw new NoSuchElementException("No such element")
     } else {
       x
@@ -26,45 +25,43 @@ object node14 {
                                                   //| licit executor: scala.concurrent.ExecutionContext)scala.concurrent.Future[T]
                                                   //| 
 
-  
-  
   def block(i: Int) = {
     println("Iteration: " + i.toString)
- 
+
     def fail = (random < 0.5)
     println(fail.toString)
     val f = Future[Int] {
-       blocking{Thread.sleep(100*random.toInt)}
-       if (fail)
-         throw(new Error("Oooops!"))
-       else i + 10
+      blocking { Thread.sleep(100 * random.toInt) }
+      if (fail)
+        throw (new Error("Oooops!"))
+      else i + 10
     }
-  
-   val f2 = filter[Int](f, (i => (i < 15)))
-   
+
+    val f2 = filter[Int](f, (i => (i < 15)))
+
     f2 onComplete {
-      case Success(s) => println(s.toString  ++ " = 10 + " ++ i.toString)
-      case Failure(t:NoSuchElementException) => println(t.getMessage.toString  ++ " " ++ i.toString)
-      case Failure(t) => println(t.getCause().toString  ++ " " ++ i.toString)
-      }
-    
-	}                                         //> block: (i: Int)Unit
+      case Success(s)                         => println(s.toString ++ " = 10 + " ++ i.toString)
+      case Failure(t: NoSuchElementException) => println(t.getMessage.toString ++ " " ++ i.toString)
+      case Failure(t)                         => println(t.getCause().toString ++ " " ++ i.toString)
+    }
+
+  }                                               //> block: (i: Int)Unit
   /* Multiple executions of a block of commands where
    * each block contains one collectCoins and
    * one buyTreasure. If either call fails, the whole iteration does not fail,
    * because we are catching exceptions (with flatMap) in this implementation.
    * Note that these blocks execute synchrounsly.
    */
-  (0 to 10 toList).foreach(i =>block(i))          //> Iteration: 0
+  (0 to 10 toList).foreach(i => block(i))         //> Iteration: 0
                                                   //| true
                                                   //| Iteration: 1
-                                                  //| false
+                                                  //| true
                                                   //| Iteration: 2
                                                   //| true
                                                   //| Iteration: 3
                                                   //| true
                                                   //| Iteration: 4
-                                                  //| true
+                                                  //| false
                                                   //| Iteration: 5
                                                   //| false
                                                   //| Iteration: 6
@@ -77,16 +74,16 @@ object node14 {
                                                   //| false
                                                   //| Iteration: 10
                                                   //| true
-    blocking{Thread.sleep(3000)}                  //> 12 = 10 + 2
-                                                  //| java.lang.Error: Oooops! 1
-                                                  //| java.lang.Error: Oooops! 0
-                                                  //| java.lang.Error: Oooops! 6
-                                                  //| java.lang.Error: Oooops! 7
-                                                  //| java.lang.Error: Oooops! 4
-                                                  //| java.lang.Error: Oooops! 10
-                                                  //| No such element 9
-                                                  //| java.lang.Error: Oooops! 8
+  blocking { Thread.sleep(3000) }                 //> java.lang.Error: Oooops! 1
+                                                  //| 12 = 10 + 2
                                                   //| 13 = 10 + 3
-                                                  //| No such element 5-
-   
+                                                  //| java.lang.Error: Oooops! 0
+                                                  //| java.lang.Error: Oooops! 5
+                                                  //| java.lang.Error: Oooops! 6
+                                                  //| java.lang.Error: Oooops! 4
+                                                  //| java.lang.Error: Oooops! 8
+                                                  //| No such element 9
+                                                  //| No such element 10
+                                                  //| java.lang.Error: Oooops! 7-
+
 }

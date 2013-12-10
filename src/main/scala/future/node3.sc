@@ -11,71 +11,69 @@ import math.random
 
 object node3 {
   println("Welcome to the Scala worksheet")       //> Welcome to the Scala worksheet
-  
-  abstract class Try[+T] {
-      def flatMap[S](f: T=>Try[S]): Try[S] = this match {
-		    case Success(value)   => f(value)  //(a)
-		    //case Success(value)   => Try(f(value)) //(b)
-		    //case Success(value)   => try {f(value) } catch { case t:Throwable => Failure(t)} //(c)
-		    case failure @ Failure(t)        => Failure(t) //fixed typo
-		  }
-  }
-  
-  case class Success[+T](elem: T) extends Try[T]
-  
-  case class Failure(t: Throwable) extends Try[Nothing]
-  
-  object Try {
-    def apply[T](r: =>T): Try[T] = {
 
-		  
+  abstract class Try[+T] {
+    def flatMap[S](f: T => Try[S]): Try[S] = this match {
+      case Success(value)       => f(value) //(a)
+      //case Success(value)   => Try(f(value)) //(b)
+      //case Success(value)   => try {f(value) } catch { case t:Throwable => Failure(t)} //(c)
+      case failure @ Failure(t) => Failure(t) //fixed typo
+    }
+  }
+
+  case class Success[+T](elem: T) extends Try[T]
+
+  case class Failure(t: Throwable) extends Try[Nothing]
+
+  object Try {
+    def apply[T](r: => T): Try[T] = {
+
       try { Success(r) }
-      catch { case t:Throwable => Failure(t) }
-  
+      catch { case t: Throwable => Failure(t) }
+
     }
   }
-  
-  
+
   abstract class Coin {
-     val denomination: Int
+    val denomination: Int
   }
-    case class Silver() extends Coin {
-      val denomination = 1
-    }
-    case class Gold() extends Coin {
-      val denomination = 10
-    }
-    
-  abstract class Treasure{
+  case class Silver() extends Coin {
+    val denomination = 1
+  }
+  case class Gold() extends Coin {
+    val denomination = 10
+  }
+
+  abstract class Treasure {
     val value: Int
-    }
-  
+  }
+
   trait Adventure {
     def collectCoins(): Try[List[Coin]]
     def buyTreasure(coins: List[Coin]): Try[Treasure]
   }
- 
-  def eatenByMonster(a:Adventure) = (random < 0.3)//> eatenByMonster: (a: node3.Adventure)Boolean
-  class GameOverException(msg: String) extends Error{
+
+  def eatenByMonster(a: Adventure) = (random < 0.3)
+                                                  //> eatenByMonster: (a: node3.Adventure)Boolean
+  class GameOverException(msg: String) extends Error {
     override def toString = msg
   }
   val treasureCost = 50                           //> treasureCost  : Int = 50
-  
+
   object Diamond extends Treasure {
     val value = treasureCost
     override def toString = "Diamond"
   }
-   
-  def coinSource(rand: Double, prob: Double ): Coin =
+
+  def coinSource(rand: Double, prob: Double): Coin =
     if (rand < prob) {
       Thread.sleep(100)
       new Gold
-    }
-    else {
+    } else {
       Thread.sleep(10)
       new Silver
     }                                             //> coinSource: (rand: Double, prob: Double)node3.Coin
-  
+
   object AdventureFactory {
     /* The anonymous class syntax is used for this factory object,
     * allowing us to instantiate an object
@@ -87,43 +85,42 @@ object node3 {
     * AdventureFactory.apply()
     */
     def apply() = new Adventure {
-       def collectCoins(): Try[List[Coin]] = Try {
-         if (eatenByMonster(this))
-           throw(new GameOverException("Oooops"))
-         else for { i <- 1 to 10 toList } yield coinSource(random, 0.5)
-       }
-       def totalCoins(coins: List[Coin]) =
-         coins.foldLeft(0)( (sum, coin) => sum + coin.denomination  )
-       
-       def buyTreasure(coins: List[Coin]): Try[Treasure] = Try
-       {
-         if (totalCoins(coins) < treasureCost)
-           throw(new GameOverException("Nice try!"))
-         else
-           Diamond
-       }
+      def collectCoins(): Try[List[Coin]] = Try {
+        if (eatenByMonster(this))
+          throw (new GameOverException("Oooops"))
+        else for { i <- 1 to 10 toList } yield coinSource(random, 0.5)
+      }
+      def totalCoins(coins: List[Coin]) =
+        coins.foldLeft(0)((sum, coin) => sum + coin.denomination)
+
+      def buyTreasure(coins: List[Coin]): Try[Treasure] = Try {
+        if (totalCoins(coins) < treasureCost)
+          throw (new GameOverException("Nice try!"))
+        else
+          Diamond
+      }
     }
   }
   /* Exception handling with flatMap.
   */
   def block(i: Int) = {
     println("Iteration: " + i.toString)
-	  val adventure: Adventure = AdventureFactory()
-	  val tryCoins: Try[List[Coin]] = adventure.collectCoins()
-	  val tryTreasure: Try[Treasure] = tryCoins.flatMap(coins=>{adventure.buyTreasure(coins)})
-	  tryTreasure match {
-	    case Success(treasure)     => println("Treasure: " + treasure.toString + " " + i.toString)
-	    case Failure(t)      => println("Error Message: " + t.toString + " " + i.toString)
-	  }
-	}                                         //> block: (i: Int)Unit
+    val adventure: Adventure = AdventureFactory()
+    val tryCoins: Try[List[Coin]] = adventure.collectCoins()
+    val tryTreasure: Try[Treasure] = tryCoins.flatMap(coins => { adventure.buyTreasure(coins) })
+    tryTreasure match {
+      case Success(treasure) => println("Treasure: " + treasure.toString + " " + i.toString)
+      case Failure(t)        => println("Error Message: " + t.toString + " " + i.toString)
+    }
+  }                                               //> block: (i: Int)Unit
   /* Multiple executions of a block of commands where
    * each block contains one collectCoins and
    * one buyTreasure. If either call fails, the whole iteration does not fail,
    * because we are catching exceptions (with flatMap) in this implementation.
    * Note that these blocks execute synchrounsly.
    */
-  (1 to 10 toList).foreach(i =>block(i))          //> Iteration: 1
-                                                  //| Error Message: Nice try! 1
+  (1 to 10 toList).foreach(i => block(i))         //> Iteration: 1
+                                                  //| Treasure: Diamond 1
                                                   //| Iteration: 2
                                                   //| Error Message: Oooops 2
                                                   //| Iteration: 3
@@ -131,18 +128,16 @@ object node3 {
                                                   //| Iteration: 4
                                                   //| Treasure: Diamond 4
                                                   //| Iteration: 5
-                                                  //| Error Message: Nice try! 5
+                                                  //| Error Message: Oooops 5
                                                   //| Iteration: 6
-                                                  //| Treasure: Diamond 6
+                                                  //| Error Message: Nice try! 6
                                                   //| Iteration: 7
-                                                  //| Error Message: Nice try! 7
+                                                  //| Error Message: Oooops 7
                                                   //| Iteration: 8
                                                   //| Treasure: Diamond 8
                                                   //| Iteration: 9
-                                                  //| Treasure: Diamond 9
+                                                  //| Error Message: Oooops 9
                                                   //| Iteration: 10
-                                                  //| Error Message: Oooops 10
+                                                  //| Error Message: Nice try! 10
 
-
-   
 }
